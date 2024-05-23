@@ -48,4 +48,4 @@ Ensuring consistency across different environments and simplifying the deploymen
 Performed on the database side to leverage PostgreSQL's powerful querying capabilities, ensuring efficient and accurate computation of aggregate statistics. This reduces the load on the backend and improves overall system performance compared to doing aggregations on the backend side.
 
 ## Microservices Architecture
-The microservices are designed to be stateless, allowing them to be scaled horizontally. This ensures that the system can handle increased load by adding more instances, maintaining high availability and performance.
+The microservice is designed to be stateless, allowing them to be scaled horizontally. This ensures that the system can handle increased load by adding more instances, maintaining high availability and performance.
