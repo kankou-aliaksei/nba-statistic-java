@@ -2,6 +2,28 @@
 
 The microservice-based system for NBA player statistics is designed to seamlessly log and aggregate player and team performance data. By ensuring high availability and scalability, the system can handle large volumes of concurrent data inputs and deliver real-time, accurate statistics.
 
+# Project Name
+
+## Prerequisites
+- Docker
+- Docker Compose
+
+## Running the Application
+
+To build and start the application, run the following command:
+
+```bash
+docker-compose up --build
+```
+
+## Testing the API
+
+You can test the API by sending a GET request to the following endpoint:
+
+```
+GET http://localhost:8080/api/players
+```
+
 # Technical Stack Overview
 
 ## Java 21
