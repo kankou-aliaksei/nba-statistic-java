@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/nba_stats
+      SPRING_R2DBC_LOGGING_LEVEL: ERROR
+      LOGGING_LEVEL_IO_R2DBC_POSTGRESQL_QUERY: ERROR
+      LOGGING_LEVEL_IO_R2DBC_POSTGRESQL_PARAM: ERROR
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16.3
+    environment:
+      POSTGRES_DB: nba_stats
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db_data:/var/lib/postgresql/data
+      - ./db_init:/docker-entrypoint-initdb.d/
