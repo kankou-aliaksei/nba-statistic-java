@@ -1,0 +1,40 @@
+plugins {
+    id 'org.springframework.boot' version '3.2.5'
+    id 'io.spring.dependency-management' version '1.1.0'
+    id 'java'
+}
+
+group = 'pro.sunspace'
+version = '0.0.1'
+sourceCompatibility = '21'
+targetCompatibility = '21'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-webflux:3.2.5'
+    implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc:3.2.5'
+    implementation 'org.postgresql:r2dbc-postgresql:1.0.5.RELEASE'
+    implementation 'org.projectlombok:lombok:1.18.30'
+    implementation 'org.springframework.boot:spring-boot-starter-validation:3.2.5'
+    implementation 'jakarta.validation:jakarta.validation-api:3.1.0'
+    implementation 'io.projectreactor.netty:reactor-netty:1.1.19'
+    implementation 'io.projectreactor.kafka:reactor-kafka:1.3.23'
+    implementation 'javax.annotation:javax.annotation-api:1.3.2'
+
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+
+    implementation 'io.opentracing.contrib:opentracing-spring-web-starter:4.1.0'
+    implementation 'io.jaegertracing:jaeger-client:1.8.1'
+    implementation 'io.micrometer:micrometer-tracing-bridge-otel:1.3.1'
+    implementation 'io.opentelemetry:opentelemetry-exporter-otlp:1.39.0'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test:3.2.5'
+    testImplementation 'io.projectreactor:reactor-test:3.6.6'
+}
+
+test {
+    useJUnitPlatform()
+}

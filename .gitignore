@@ -43,3 +43,6 @@ bin/
 
 db_data
 .idea
+kafka-data
+zookeeper-data
+zookeeper-log

@@ -1,19 +1,6 @@
 version: '3.8'
 
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/nba_stats
-      SPRING_R2DBC_LOGGING_LEVEL: ERROR
-      LOGGING_LEVEL_IO_R2DBC_POSTGRESQL_QUERY: ERROR
-      LOGGING_LEVEL_IO_R2DBC_POSTGRESQL_PARAM: ERROR
-    depends_on:
-      - postgres
 
   postgres:
     image: postgres:16.3
@@ -26,3 +13,114 @@ services:
     volumes:
       - ./db_data:/var/lib/postgresql/data
       - ./db_init:/docker-entrypoint-initdb.d/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    healthcheck:
+      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181", "|", "grep", "imok"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    volumes:
+      - ./zookeeper-data:/var/lib/zookeeper/data
+      - ./zookeeper-log:/var/lib/zookeeper/log
+
+  kafka:
+    image: confluentinc/cp-kafka:7.0.1
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://kafka:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+      KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE: false
+    ports:
+      - "9092:9092"
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    volumes:
+      - ./kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "9092" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686" # the jaeger UI
+      - "4317:4317" # the OpenTelemetry collector grpc
+      - "14268:14268"
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8081:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9093
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    depends_on:
+      - kafka
+
+  game-statistic-consumer:
+    build:
+      context: game-statistic-consumer
+      dockerfile: Dockerfile
+    environment:
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/nba_stats
+      SPRING_R2DBC_LOGGING_LEVEL: ERROR
+      LOGGING_LEVEL_IO_R2DBC_POSTGRESQL_QUERY: ERROR
+      LOGGING_LEVEL_IO_R2DBC_POSTGRESQL_PARAM: ERROR
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9093
+      SPRING_KAFKA_CONSUMER_GROUP_ID: game-statistics-group
+      JAEGER_ENDPOINT: http://jaeger:14268/api/traces
+      JAEGER_SERVICE_NAME: game-statistic-consumer
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  api:
+    build:
+      context: api
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/nba_stats
+      SPRING_R2DBC_LOGGING_LEVEL: ERROR
+      LOGGING_LEVEL_IO_R2DBC_POSTGRESQL_QUERY: ERROR
+      LOGGING_LEVEL_IO_R2DBC_POSTGRESQL_PARAM: ERROR
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9093
+      JAEGER_ENDPOINT: http://jaeger:14268/api/traces
+      JAEGER_SERVICE_NAME: api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1" ]
+      interval: 10s
+      timeout: 10s
+      retries: 15

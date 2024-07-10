@@ -16,6 +16,11 @@ To build and start the application, run the following command:
 docker-compose up --build
 ```
 
+Wait for Services to Start
+
+After running the above command, it is important to wait until the API, consumer, and all dependent components are fully 
+started and ready. You can monitor the logs in the terminal to ensure that all services have initialized correctly.
+
 ## Testing the API
 
 You can test the API by sending a GET request to the following endpoint:
@@ -49,3 +54,13 @@ Performed on the database side to leverage PostgreSQL's powerful querying capabi
 
 ## Microservices Architecture
 The microservice is designed to be stateless, allowing them to be scaled horizontally. This ensures that the system can handle increased load by adding more instances, maintaining high availability and performance.
+
+## Kafka Integration
+
+### Why Kafka?
+
+- Apache Kafka is chosen for its high throughput, scalability, and fault tolerance, making it ideal for handling the potentially high load of game statistics logging. The system is designed to manage large volumes of concurrent data inputs efficiently.
+
+- Error Handling and Dead Letter Queue
+
+- A retry mechanism for recoverable errors ensures the system can handle transient errors gracefully, contributing to the robustness and reliability of the data processing pipeline.
